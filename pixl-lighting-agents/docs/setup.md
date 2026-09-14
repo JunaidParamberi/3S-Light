@@ -2,167 +2,84 @@
 
 ## Prerequisites
 
-1. **ElevenLabs Account** — With Conversational AI access
-2. **myERP Tenant** — Demo or production
-3. **MCP Server** — myERP MCP adapter running
-4. **Phone Number** — Registered on ElevenLabs (not yet done)
+1. **ElevenLabs Account** — With Conversational AI and Agent Transfer access
+2. **myERP Tenant** — Demo (`myerp.infinitebarakah.com`) or production
+3. **MCP Server** — myERP MCP server running at `https://myerp.infinitebarakah.com/api/mcp`
+4. **Phone Number** — Registered on ElevenLabs and assigned to Orchestrator (blocked)
 
 ---
 
-## Step 1: ElevenLabs Agent Setup
+## Step 1: ElevenLabs Agent Architecture Setup
 
-### Create Agent
-1. Go to ElevenLabs Dashboard → Agents → Create Agent
-2. Name the agent (e.g., "Maya — Inbound Receptionist")
-3. Select the voice (Amber King for external agents, Jordan for internal)
-4. Set the TTS model to V3 Conversational
-5. Enable Expressive Mode
+The system consists of 1 Orchestrator and 3 Department Sub-Agents:
 
-### Configure System Prompt
-1. Paste the agent's system prompt into the System Prompt field
-2. Ensure the first instruction is the mandatory `get_caller_context` call
-3. Verify the `{{system__caller_id}}` dynamic variable is used correctly
-4. Add the "Sound like a real person" section for naturalness
+| Role | ElevenLabs Dashboard Name | ElevenLabs Agent ID | First Message |
+|---|---|---|---|
+| **Orchestrator** | `Pixl Lighting — Main Assistant` | `agent_9901m25rmysyefva90xs89chy3nd` | *"Pixl Lighting, how can I direct your call today?"* |
+| **Sales** | `Pixl Lighting — Sales & Projects` | `agent_7601m27jcm7ten787a5hpz68sz5j` | *"Pixl Lighting, how can I help you today?"* |
+| **Logistics** | `Pixl Lighting — Logistics Agent` | `agent_1001m27jcfqnf3mb6jzszw3w3xf0` | *"Pixl Lighting, how can I help you today?"* |
+| **Accounting** | `Pixl Lighting — Accounting` | `agent_0101m2fwfttne85stk1hwcjwkzjb` | *"Pixl Lighting, how can I help you today?"* |
 
-### Set First Message
-Each agent has a specific first message:
-- **Maya:** "Pixl Lighting, Maya speaking."
-- **Claire:** "Pixl Lighting, this is Claire — give me one sec, I'll pull you up."
-- **Rachel:** "Pixl Lighting, this is Rachel — give me one sec, I'll pull you up."
-- **Jordan:** "Pixl internal — go ahead."
+### Voice Configuration
+- **Model:** Amber King (Raspy, Authentic and Kind)
+- **TTS:** V3 Conversational
+- **Expressive Mode:** Enabled
+
+### System Prompts
+- Orchestrator: `docs/orchestrator-prompt.md`
+- Sales: `docs/sales-prompt.md`
+- Logistics: `docs/logistics-prompt.md`
+- Accounting: `docs/accounting-prompt.md`
 
 ### Enable Guardrails
-1. Go to Guardrails tab
-2. Enable **Focus** guardrail
-3. Enable **Manipulation** guardrail
-4. Leave Content and Custom as-is
-
-### Enable System Tools
-1. Go to Agent Actions
-2. Enable **End Conversation** tool
-3. Enable **Transfer to Number** tool (configure number later)
+1. Go to Guardrails tab on each agent.
+2. Enable **Focus** guardrail.
+3. Enable **Manipulation** guardrail.
+4. Enable **Loop Prevention** toggle.
 
 ---
 
 ## Step 2: MCP Server Configuration
 
-### Attach MCP Server
-1. Go to agent's Tools tab
-2. Click "Add MCP Server"
-3. Select workspace-level "myERP MCP" server
-4. Verify 16 tools are available
+All agents connect to the workspace-level `myERP MCP` server:
 
-### Configure Tool Access
-- **Read-only agents (Maya, Claire, Jordan):** No Approval mode
-- **Write-capable agent (Rachel):** Fine-Grained approval mode
-  - Auto-approve: Read tools, `log_interaction`, `create_task`
-  - Require approval: All other write tools
-
-### Verify Authentication
-1. Test that the MCP token works: `mo_KkDGxbeU9rkkifrbrrbYqDBca5TvDmKpDvXtHrSnhok`
-2. Ensure the token includes "Bearer" prefix
-3. Test a simple tool call (e.g., `get_caller_context`)
+1. Go to agent's **Tools → MCP** tab.
+2. Ensure `myERP MCP` (`https://myerp.infinitebarakah.com/api/mcp`) is connected.
+3. Verify 16 tools are available (`get_caller_context`, `list_products`, `list_sales_orders`, `list_invoices`, etc.).
+4. Verify authentication token `mo_KkDGxbeU9rkkifrbrrbYqDBca5TvDmKpDvXtHrSnhok`.
 
 ---
 
-## Step 3: Post-Call Webhook
+## Step 3: Configure Orchestrator `transfer_to_agent`
 
-### Create Webhook
-1. Go to ElevenLabs Settings → Webhooks
-2. Create webhook: `myErp-post-webhook`
-3. URL: `https://myerp.infinitebarakah.com/api/webhooks/elevenlabs`
-4. Events: Transcript ✅, Audio ✅, Call Initiation Failures ✅
-5. Auth: HMAC signing (send secret to myERP team)
+On the Orchestrator (`agent_9901m25rmysyefva90xs89chy3nd`):
 
-### Verify Webhook
-1. Make a test call
-2. Check myERP for the logged transcript
-3. Verify audio file is accessible
+1. Go to **Tools** tab.
+2. Enable **Transfer to agent** system tool.
+3. Switch to JSON Mode and configure the transfers:
+   - Target 1: `agent_7601m27jcm7ten787a5hpz68sz5j` (Sales)
+   - Target 2: `agent_1001m27jcfqnf3mb6jzszw3w3xf0` (Logistics)
+   - Target 3: `agent_0101m2fwfttne85stk1hwcjwkzjb` (Accounting)
+4. Save and Publish to Main.
 
 ---
 
-## Step 4: Data Collection Fields
+## Step 4: Post-Call Webhook & Memory
 
-### Add to Agent 1 and 2
-1. Go to agent settings
-2. Add field: `follow_up_task` (string)
-3. Add field: `follow_up_due` (date, YYYY-MM-DD)
+Ensure the workspace webhook is active:
 
-These fields are populated by the agent when a follow-up is needed.
-
----
-
-## Step 5: Phone Number Registration
-
-### On ElevenLabs
-1. Go to Settings → Phone Numbers
-2. Purchase or port a number
-3. Assign to agent
-4. Test inbound call
-
-### On myERP
-1. Configure the phone number in the tenant settings
-2. Set up call routing rules
-3. Test end-to-end
+1. Go to ElevenLabs **Settings → Webhooks** (or Developer Webhooks).
+2. Endpoint: `https://myerp.infinitebarakah.com/api/webhooks/elevenlabs`
+3. Events subscribed:
+   - `Transcript` ✅
+   - `Audio` ✅
+   - `Call Initiation Failures` ✅
+4. Purpose: Ingests the call transcript, caller ID, and follow-up data collection fields into myERP so the customer's history is immediately retrieved on subsequent calls.
 
 ---
 
-## Step 6: Publishing
+## Step 5: Publishing
 
-### Publish to Main Branch
-1. Make all changes on the agent's branch
-2. Click "Publish"
-3. Review changes in the dialog
-4. Add commit message
-5. Confirm publish
-
-### Verify Published Version
-1. Check that the branch shows "Main" as the published version
-2. Verify all settings are live
-3. Make a test call to confirm
-
----
-
-## Step 7: Testing
-
-### Test Suite
-Agent 1 has a test suite with 9 test cases:
-1. Call is not ended or escalated before the caller is answered
-2. Agent greets caller by name when matched
-3. Agent handles unmatched callers correctly
-4. Agent looks up quote details accurately
-5. Agent handles order status questions
-6. Agent handles invoice questions
-7. Agent handles product questions
-8. Agent escalates technical questions appropriately
-9. Agent ends call naturally
-
-### Run Tests
-1. Go to agent's Tests tab
-2. Select test case
-3. Run test
-4. Review results
-5. Fix any failures
-
----
-
-## Environment Variables
-
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `system__caller_id` | Dynamic | Caller's phone number (auto-filled) |
-| MCP Token | `Bearer mo_...` | Authentication for myERP API |
-| Webhook URL | `https://myerp.infinitebarakah.com/api/webhooks/elevenlabs` | Post-call logging |
-| Demo Login | `demo@yyzlighting.com` | myERP demo tenant |
-
----
-
-## Branching Strategy
-
-Each agent has its own branch for configuration management:
-- **Agent 1:** `agtbrch_3201m25rn01rf789hhvs9sbnpzx9`
-- **Agent 2:** `agtbrch_7101m27jcgn8fdaan8p2syhkf3sm`
-- **Agent 3:** `agtbrch_0701m27jcne9f44bg0148k923gve`
-- **Agent 4:** `agtbrch_2801m27jcvh1erts885ktas0mhy4`
-
-Changes are made on the branch, then published to Main.
+1. Ensure all changes on each agent's branch are tested.
+2. Click **Publish** → Confirm.
+3. Verify all agents show **Main** branch active.

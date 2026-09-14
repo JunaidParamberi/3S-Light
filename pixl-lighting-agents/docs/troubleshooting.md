@@ -12,7 +12,7 @@
 
 **Fix:**
 - Verify the "Never break character" instruction is in the system prompt
-- Add: "You are Amber/Maya/Claire/Rachel/Jordan. A real person. You work at Pixl Lighting. That is who you are."
+- Add: "You are a real human working at Pixl Lighting. You represent Pixl Lighting directly. You never use personal names or refer to yourself as an AI or receptionist."
 - Enable Manipulation guardrail
 - Test with adversarial prompts
 

@@ -1,55 +1,90 @@
 # 3S Light — Pixl Lighting Voice Agent Platform
 
-> AI-powered voice agents for Pixl Lighting's inbound call handling, powered by ElevenLabs and integrated with myERP.
+> AI-powered voice agent system for Pixl Lighting's inbound call handling, built on ElevenLabs Conversational AI and integrated with myERP via Model Context Protocol (MCP).
 
 ## What This Is
 
-Four ElevenLabs voice agents that answer Pixl Lighting's phones, look up customer data in real time, and handle calls naturally — from order status checks to sales inquiries to internal staff lookups.
+An inbound voice system structured on an **Orchestrator → Sub-Agents** architecture. Inbound calls are answered by an Orchestrator that identifies the caller, classifies their inquiry, and transfers them to one of three specialized department sub-agents: Sales, Logistics, or Accounting.
 
-The agents are designed to be **indistinguishable from a human receptionist**. They use natural speech patterns, know the caller's name and history before they even ask, and follow strict guardrails so nothing gets promised that Pixl can't deliver.
+The agents speak as **one unified company voice ("Pixl Lighting")** with senior client specialist personas. They never use personal names, never call themselves "receptionists", eliminate robotic search phrases, and maintain conversational presence while querying myERP. Every call is logged into the ERP so caller context and memory persist across calls.
+
+---
 
 ## Architecture at a Glance
 
 ```
-Caller → Phone → ElevenLabs Agent → MCP Server → myERP API
-                                    ↓
-                              Post-call Webhook → myERP (logs transcript, audio, metadata)
+                    INBOUND CALL
+                         │
+                   Caller ID lookup
+             phone number → ERP/CRM record
+                         │
+               ┌─────────────────────┐
+               │ Orchestrator Agent  │  (Pixl Lighting — Main Assistant)
+               │ (agent_9901m25...)  │
+               └──────────┬──────────┘
+                          │ transfer_to_agent
+         ┌────────────────┼────────────────┐
+         ↓                ↓                ↓
+   ┌───────────┐    ┌───────────┐    ┌───────────┐
+   │   Sales   │    │ Logistics │    │Accounting │
+   │   Agent   │    │   Agent   │    │   Agent   │
+   │(agent_760)│    │(agent_100)│    │(agent_010)│
+   └─────┬─────┘    └─────┬─────┘    └─────┬─────┘
+         │                │                │
+         └────────────────┼────────────────┘
+                          │
+               Knowledge Base (RAG)
+             data sheets & wiring specs
+                          │ (unresolved technical)
+                          ↓
+               Escalate: Sophia Charles
+                          │
+         ERP Backbone (myERP MCP Server)
+      orders · quotes · inventory · invoices
 ```
 
-## The Four Agents
+---
 
-| # | Name | Role | Line | Voice |
-|---|------|------|------|-------|
-| 1 | Maya | Inbound Receptionist | External main line | Amber King |
-| 2 | Claire | Receptionist + Call Logging | External (overflow) | Amber King |
-| 3 | Rachel | Sales Agent | External (sales) | Amber King |
-| 4 | Jordan | Internal Staff Assistant | Internal line | Jordan |
+## The Agents
+
+| Role | ElevenLabs Dashboard Name | ElevenLabs Agent ID | Responsibility | Key Tools |
+|---|---|---|---|---|
+| **Orchestrator** | `Pixl Lighting — Main Assistant` | `agent_9901m25rmysyefva90xs89chy3nd` | Identifies caller, classifies query, transfers to department | `get_caller_context`, `transfer_to_agent`, `find_customer_by_phone`, `find_customer_by_email` |
+| **Sales** | `Pixl Lighting — Sales & Projects` | `agent_7601m27jcm7ten787a5hpz68sz5j` | Quotes, catalogue, pricing, onboarding new customer records | `list_products`, `get_product`, `list_open_quotes`, `get_quote`, `create_customer`, `create_quote` |
+| **Logistics** | `Pixl Lighting — Logistics Agent` | `agent_1001m27jcfqnf3mb6jzszw3w3xf0` | Order status, delivery schedules, manufacturing/OEM tracking | `list_sales_orders`, `get_sales_order`, `list_sales_orders_page`, `get_caller_context` |
+| **Accounting** | `Pixl Lighting — Accounting` | `agent_0101m2fwfttne85stk1hwcjwkzjb` | Invoices, payment allocations, statements, wire instructions | `list_invoices`, `get_invoice`, `get_caller_context` |
+
+*Note: The internal staff line (formerly Jordan) was deleted as internal team members query myERP directly.*
+
+---
+
+## System Prompts
+
+- **[Orchestrator Prompt](docs/orchestrator-prompt.md)** — Agent 1 configuration
+- **[Sales Prompt](docs/sales-prompt.md)** — Agent 3 configuration
+- **[Logistics Prompt](docs/logistics-prompt.md)** — Agent 2 configuration
+- **[Accounting Prompt](docs/accounting-prompt.md)** — Agent 4 configuration
+
+---
 
 ## Key Documents
 
-- **[Architecture](docs/architecture.md)** — System design, MCP integration, data flow
-- **[Agent Profiles](docs/agents.md)** — Each agent's persona, tools, guardrails, and configuration
-- **[Workflows](docs/workflows.md)** — Call flows, routing logic, escalation paths
-- **[Entity Relationship Diagram](docs/erd.md)** — myERP data model and how agents query it
-- **[Setup Guide](docs/setup.md)** — How to deploy and configure from scratch
-- **[Troubleshooting](docs/troubleshooting.md)** — Known issues and fixes
-- **[Progress Log](docs/progress.md)** — What's done, what's next, decisions made
+- **[Architecture](docs/architecture.md)** — Complete system design and data flow
+- **[Agent Profiles](docs/agents.md)** — Detailed profiles, tools, and guardrails
+- **[Workflows](docs/workflows.md)** — Call flows and `transfer_to_agent` routing logic
+- **[Setup Guide](docs/setup.md)** — Deployment and configuration guide
+- **[Progress Log](docs/progress.md)** — Full development chronology and decisions
+- **[Troubleshooting](docs/troubleshooting.md)** — Known issues, error patterns, and fixes
+- **[Stress Tests](docs/stress-test.md)** — 30+ scenario testing framework
+- **[Entity Relationship Diagram](docs/erd.md)** — myERP schema reference
+- **[Missing Tool Specification](docs/find-customer-by-company-spec.md)** — `find_customer_by_company` tool spec for myERP team
 
-## Quick Start
-
-1. See [Setup Guide](docs/setup.md) for prerequisites and deployment
-2. See [Agent Profiles](docs/agents.md) for persona details
-3. See [Progress Log](docs/progress.md) for current status
+---
 
 ## Environment
 
 - **ERP:** myERP (demo tenant at `myerp.infinitebarakah.com`)
 - **Voice Platform:** ElevenLabs Conversational AI
-- **LLM:** GPT-5.6 Luna (Agent 1), configurable per agent
-- **TTS Model:** V3 Conversational with Expressive Mode
-- **MCP Protocol:** Model Context Protocol for ERP integration
-- **Phone:** Not yet registered (blocked)
-
----
-
-*No credentials are stored in this repository. All secrets are managed through ElevenLabs dashboard and myERP admin panel.*
+- **Voice Model:** Amber King (Raspy, Authentic and Kind) on V3 Conversational
+- **MCP Server:** `https://myerp.infinitebarakah.com/api/mcp`
+- **Post-Call Webhook:** `https://myerp.infinitebarakah.com/api/webhooks/elevenlabs`

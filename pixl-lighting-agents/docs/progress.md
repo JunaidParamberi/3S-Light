@@ -2,11 +2,44 @@
 
 ## Current State: September 14, 2026
 
-**Phase:** Agent Configuration & Naturalness Optimization  
-**Status:** 3 customer-facing agents configured, published, and rewritten for premium human tone. Jordan (internal agent) deleted — not needed in inbound flow.  
+**Phase:** Architecture Alignment & Department Routing  
+**Status:** Inbound Orchestrator (`agent_9901m25...`) wired with `transfer_to_agent` system tool to 3 specialized sub-agents (Sales `agent_7601...`, Logistics `agent_1001...`, Accounting `agent_0101...`). All 4 agents published to Main.  
 **Blocked on:** Phone number registration, shared mailbox, myERP production tenant
 
-### September 14, 2026 — Premium Tone Rewrite & Jordan Removal (latest)
+### September 14, 2026 — Orchestrator → Sub-Agents Architecture Restructure (latest)
+
+**Goal:** Reconfigure the system to match the exact target architecture diagram from Claude artifact.
+
+**Changes Applied:**
+1. **Agent 1 (`agent_9901m25rmysyefva90xs89chy3nd`): Converted to pure Inbound Orchestrator**
+   - First Message: *"Pixl Lighting, how can I direct your call today?"*
+   - Enabled and configured `transfer_to_agent` system tool in JSON mode with 3 routing targets:
+     - Sales (`agent_7601m27jcm7ten787a5hpz68sz5j`)
+     - Logistics (`agent_1001m27jcfqnf3mb6jzszw3w3xf0`)
+     - Accounting (`agent_0101m2fwfttne85stk1hwcjwkzjb`)
+   - Published to Main.
+2. **Agent 2 (`agent_1001m27jcfqnf3mb6jzszw3w3xf0`): Reconfigured as Logistics Agent**
+   - Renamed: `Pixl Lighting — Logistics Agent`
+   - First Message: *"Pixl Lighting, how can I help you today?"*
+   - Specialized prompt for order fulfillment, manufacturing schedules, and tracking (`docs/logistics-prompt.md`).
+   - Published to Main.
+3. **Agent 3 (`agent_7601m27jcm7ten787a5hpz68sz5j`): Sales Agent**
+   - Renamed: `Pixl Lighting — Sales & Projects`
+   - Specialized prompt for catalogue pricing, quotes, and new lead onboarding (`docs/sales-prompt.md`).
+   - Published to Main.
+4. **Agent 4 (`agent_0101m2fwfttne85stk1hwcjwkzjb`): Created new Accounting Agent**
+   - Renamed: `Pixl Lighting — Accounting`
+   - Attached `myERP MCP` server for invoice lookups.
+   - Specialized prompt for invoices, balances, wire instructions, and statements (`docs/accounting-prompt.md`).
+   - Published to Main.
+5. **Cleaned up workspace & repo:**
+   - Deleted old prompt files (`maya-prompt-v2`, `claire-prompt-v2`, `rachel-prompt-v2`, `rachel-prompt`, `pixl-master-prompt`).
+   - Removed 135+ temporary browser snapshot files and ignored `.playwright-mcp/`.
+   - Updated `README.md`, `architecture.md`, `agents.md`, `workflows.md`, and `setup.md`.
+
+---
+
+### September 14, 2026 — Premium Tone Rewrite & Jordan Removal
 
 **Issues found from live test call:**
 1. Agent said "let me try a simpler search" and "I'm not finding anything with those search terms" out loud — sounded robotic, exposed internal mechanics
