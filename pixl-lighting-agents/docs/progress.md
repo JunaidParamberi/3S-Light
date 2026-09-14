@@ -139,6 +139,31 @@
 
 ---
 
+## Test Results — September 14, 2026
+
+### Agent 1 — Maya (Inbound Receptionist)
+| Criterion | Result | Detail |
+|-----------|--------|--------|
+| 1. Query ERP first | ✅ | Called get_caller_context + get_sales_order before answering |
+| 2. No escalation | ✅ | Never tried to transfer to Sophia |
+| 3. Don't end with outstanding question | ❌ | Ended call after caller's follow-up about hold-up |
+| 4. Handle subject change | ⚠️ | Not assessed — call ended too early |
+
+**Known issue:** Agent uses `end_call` when caller has a follow-up question. Accepted by user — contact info not available yet.
+
+**Note:** Agent name "Maya" not yet reflected in test simulation (still shows "Amber"). May need test re-run after propagation.
+
+### Agent 2 — Claire (Receptionist + Call Logging)
+**No tests attached.** Test suite needs to be created.
+
+### Agent 3 — Rachel (Sales Agent)
+**No tests attached.** Test suite needs to be created.
+
+### Agent 4 — Jordan (Internal Staff Assistant)
+**No tests attached.** Test suite needs to be created.
+
+---
+
 ## What Should Be Done Next
 
 ### Immediate (This Week)
@@ -147,6 +172,7 @@
 3. **Set up shared mailbox** — Required for guardrails 2, 3, 4
 4. **Add billing contact name** — When available, update Agent 1 prompt
 5. **Re-run Agent 1 test suite** — After contact info is available
+6. **Create test suites for Agents 2, 3, 4** — Currently no tests attached
 
 ### Short-Term (This Month)
 6. **Test all 4 agents end-to-end** — Real calls with test data
