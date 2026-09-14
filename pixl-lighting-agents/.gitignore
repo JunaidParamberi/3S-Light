@@ -30,3 +30,6 @@ logs/
 # Build
 dist/
 build/
+
+# Playwright temporary snapshots
+.playwright-mcp/
