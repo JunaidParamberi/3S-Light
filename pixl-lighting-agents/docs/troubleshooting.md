@@ -22,13 +22,20 @@
 
 **Symptoms:** `get_caller_context` returns `matched: false` for a known customer.
 
-**Cause:** Phone number mismatch or customer not in system.
+**Cause:** Phone number mismatch, customer not in system, or agent using wrong lookup tool.
 
 **Fix:**
 - Check that phone matching uses last 10 digits
 - Verify customer exists in myERP with matching phone
 - Test with `find_customer_by_phone` directly
 - If customer is new, agent should collect details
+
+**Lookup order (system prompt):**
+1. `find_customer_by_phone` — try first with any phone number
+2. `find_customer_by_email` — try if they give an email
+3. `get_customer_360` — use once you have a customer ID
+
+**Important:** There is NO `find_customer_by_company` tool. If caller gives a company name, ask for phone or email instead. Never use `find_customer_by_email` for a company name — that's the wrong tool.
 
 ---
 

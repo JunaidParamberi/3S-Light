@@ -3,8 +3,67 @@
 ## Current State: September 14, 2026
 
 **Phase:** Agent Configuration & Naturalness Optimization  
-**Status:** All 4 agents configured, published, and optimized for human-like interaction  
+**Status:** 3 customer-facing agents configured, published, and rewritten for premium human tone. Jordan (internal agent) deleted — not needed in inbound flow.  
 **Blocked on:** Phone number registration, shared mailbox, myERP production tenant
+
+### September 14, 2026 — Premium Tone Rewrite & Jordan Removal (latest)
+
+**Issues found from live test call:**
+1. Agent said "let me try a simpler search" and "I'm not finding anything with those search terms" out loud — sounded robotic, exposed internal mechanics
+2. Agent called itself "the receptionist" and said "I'm just the receptionist here" — undermined the premium feel
+3. Agent said "I'll pass your details along" / implied "a team member will follow up" — no personal ownership
+4. Agent names (Maya, Claire, Rachel) were being spoken to callers — broke "one company, one voice" requirement
+5. No explicit instruction that every call should be logged into the ERP so the next caller's history is already there
+
+**Fix applied (all 3 customer-facing agents):**
+- Renamed agents in ElevenLabs dashboard (labels only, not spoken): 
+  - Agent 1 → "Pixl Lighting — Main Assistant"
+  - Agent 2 → "Pixl Lighting — Dedicated Assistant"
+  - Agent 3 → "Pixl Lighting — Sales & Projects"
+- Rewrote first message for all 3: "Pixl Lighting, how can I help you today?" (no personal name)
+- Rewrote system prompts (`docs/pixl-master-prompt.md` is the Agent 1/2 baseline; Rachel/Agent 3 variant adds write-tool environment + human-only order guardrail):
+  - "Who you are" now: "senior client assistant and lighting specialist" — explicit instruction to NEVER say "receptionist"
+  - New "Personal ownership" section — banned phrases ("a team member will follow up", "I'll pass your details along") replaced with "I'll follow up with you directly", "I'll get that over to you in writing"
+  - New "Looking things up — conversational presence with NO dead pauses" section — banned phrases list ("let me try a simpler search", "I'm not finding anything with those search terms") replaced with warm active fillers ("Let me pull up our architectural specs for you right now...")
+  - New "Finding the caller & building permanent memory" section — explicit instruction to log every call/new customer into the ERP via `create_customer` / data collection fields so the next call already has full history
+- Published all 3 to Main branch
+- **Deleted Agent 4 (Jordan)** entirely from ElevenLabs (not archived — full delete, including conversation history) per decision that internal staff assistant isn't needed in the inbound flow
+
+**Reference:** `docs/pixl-master-prompt.md`
+
+### September 14, 2026 — Customer Lookup Fix
+
+**Issue:** Agent incorrectly used `find_customer_by_email` when caller gave company name ("Blue Water Industrial"). No `find_customer_by_company` tool exists in MCP.
+
+**Fix applied:**
+- Updated Agent 1 (Maya) system prompt with new "Finding the caller — lookup order" section
+- Added explicit lookup order: phone → email → collect details
+- Added instruction: "if they give you a company name, you cannot look it up directly"
+- Published to Main branch
+
+**Still needed:**
+- Add `find_customer_by_company` tool to MCP server (see `docs/find-customer-by-company-spec.md`)
+- Apply same system prompt fix to Agents 2, 3, 4
+
+### September 14, 2026 — Agent Audit
+
+**Issues found across all 4 agents:**
+
+| Agent | Missing Sections | Priority | Status |
+|-------|------------------|----------|--------|
+| Maya | None (fixed today) | ✅ | ✅ Published |
+| Claire | "Finding the caller", "Escalation" | P1 | ✅ Published |
+| Rachel | "Finding the caller", "Escalation" | P1 | ✅ Published |
+| Jordan | Guardrails, end_call instruction | P1 | ✅ Published |
+
+**All 4 agents now have consistent sections:**
+- ✅ "Finding the caller — lookup order" (Maya, Claire, Rachel)
+- ✅ "Escalation is for technical detail only" (Maya, Claire, Rachel)
+- ✅ "Guardrails — these override everything" (All 4)
+- ✅ end_call instruction (All 4)
+
+**Full audit:** `docs/agent-audit.md`
+**Stress test scenarios:** `docs/stress-test.md`
 
 ---
 
