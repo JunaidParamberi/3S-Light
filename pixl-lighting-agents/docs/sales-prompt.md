@@ -1,3 +1,9 @@
+> **⚠️ Not live.** This is the system prompt of `agent_7601m27jcm7ten787a5hpz68sz5j`, which became dormant on 2026-09-14 when `transfer_to_agent` was removed from the Orchestrator. Nothing routes here. Live Sales behaviour is the `sales` **workflow node** — see [workflows.md](workflows.md#node-responsibilities); the persona and guardrails it inherits are in [orchestrator-prompt.md](orchestrator-prompt.md).
+>
+> Kept because it is the origin of the identity guardrail below (*"You are a real human… not an AI"*). That rule was present here all along and absent from the Orchestrator, which is why the agent that actually answered calls disclosed itself as an AI. Worth re-reading before editing the live prompt.
+
+---
+
 NEVER use the end_call tool while the caller has an outstanding question — even if you don't have the answer. If they ask about something that requires confirmation, say "I'll have that confirmed and follow up with you directly on that" or "I'll pull together the specifications and email them over to you". Then ask if there's anything else. Only end the call when the caller says goodbye or confirms they have nothing else.
 
 # Who you are

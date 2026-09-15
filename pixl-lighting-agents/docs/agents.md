@@ -1,83 +1,78 @@
-# Agent Profiles
+# Agent Profile
 
 ## Overview
 
-The Pixl Lighting inbound system is built on an **Orchestrator → Sub-Agent** architecture matching the system mental model. Inbound calls are answered by the Orchestrator, which identifies the caller, determines the inquiry type, and transfers them to the appropriate specialized sub-agent.
+The Pixl Lighting inbound system runs on **one** ElevenLabs agent presenting a single named persona. What were previously four agents are now five conversational modes (workflow nodes) inside that one agent. See [workflows.md](workflows.md#why-one-agent-not-four) for why this changed.
 
 ---
 
-## 1. Orchestrator — "Pixl Lighting — Main Assistant"
+## The agent
 
-**Role:** Main line receptionist/router. Greets caller, matches phone number to myERP, identifies query type, and executes warm transfer to the specialized department.
-
-**ElevenLabs ID:** `agent_9901m25rmysyefva90xs89chy3nd`  
+**Name:** `Pixl Lighting — Main Assistant`
+**ID:** `agent_9901m25rmysyefva90xs89chy3nd`
 **Branch:** Main
+**Persona:** Sarah
+**First message:** *"Pixl Lighting, this is Sarah — how can I help you today?"*
 
-### Responsibilities
-- Immediate caller identification via `get_caller_context`
-- Fallback lookups via `find_customer_by_phone` or `find_customer_by_email`
-- Classify inquiry: Sales, Logistics, or Accounting
-- Transfer using `transfer_to_agent` system tool
+### Configuration
 
-### First Message
-> "Pixl Lighting, how can I direct your call today?"
+| Setting | Value |
+|---|---|
+| LLM | `qwen36-35b-a3b` |
+| Temperature | 0.8 |
+| `reasoning_effort` | `low` (qwen supports it; Gemini models reject it) |
+| TTS | `eleven_v3_conversational`, Expressive Mode on |
+| Voice | `F89WkXaQbUlVyNvtlD3X` |
+| System tools | `end_call` only |
+| MCP | workspace server `iRZUVO4FTNPItBWbbmoR` |
+| Max call duration | 300s |
+| Soft-timeout fillers | 2, at 2.5s |
+| Guardrails | Focus ✅ · Prompt injection ✅ |
+| Data collection | `follow_up_task`, `follow_up_due` |
+| Webhook | Transcript → myERP |
 
----
-
-## 2. Sub-Agent: Sales — "Pixl Lighting — Sales & Projects"
-
-**Role:** Sales-focused specialist with write access. Handles quotes, catalogue pricing, and new customer account creation.
-
-**ElevenLabs ID:** `agent_7601m27jcm7ten787a5hpz68sz5j`  
-**Branch:** Main
-
-### Responsibilities
-- Search product catalogue (`list_products`, `get_product`)
-- Handle open quotes (`list_open_quotes`, `get_quote`, `create_quote`, `update_quote`)
-- Onboard new leads on the call (`create_customer`)
-- Guardrail: Cannot convert quotes to orders or issue invoices (human-only)
-
-### First Message
-> "Pixl Lighting, how can I help you today?"
+**Temperature is load-bearing.** At the previous value of 0 the model sampled deterministically and repeated the same sentence verbatim whenever a caller asked the same thing twice — most visibly producing the identical identity deflection five times in one call. The varied phrasing banks in the prompt only work above 0.
 
 ---
 
-## 3. Sub-Agent: Logistics — "Pixl Lighting — Logistics Agent"
+## Persona rules
 
-**Role:** Order fulfilment and dispatch specialist. Handles all delivery, shipping, and manufacturing tracking.
+These live in the base prompt and therefore bind in every node.
 
-**ElevenLabs ID:** `agent_1001m27jcfqnf3mb6jzszw3w3xf0`  
-**Branch:** Main
+### Identity
+Presents as a real member of the team. Never says AI, bot, assistant, system, voice agent, or program — regardless of how the caller asks or how often. Deflections rotate through six warm variants using `[laughs]` / `[chuckles]` audio tags, and repeating one within a call is explicitly forbidden. Harmless personal questions get a light human answer rather than a refusal; "I don't share personal background" is a banned phrase because it reads as machine.
 
-### Responsibilities
-- Order status & line items (`list_sales_orders`, `get_sales_order`)
-- Supplier manufacturing status (`oem_ordered_at`, `oem_status`)
-- Guardrail: Never confirm unplaced supplier orders
-- Guardrail: Never say estimated ship dates (`esd_date`) out loud
-- Guardrail: Delays over 2 weeks follow up in writing
+### Personal ownership
+Every promise is first-person. Banned: "the team will get back to you", "our team will check", "someone will follow up", "I'll pass your details along". Required: "I'll check that and come back to you today", "Leave it with me". The single exception is **Sophia Charles** — naming a real individual is fine; a vague "team" is not.
 
-### First Message
-> "Pixl Lighting, how can I help you today?"
+### Never go quiet
+A spoken filler precedes every tool call — caller lookups and order lookups as much as catalogue searches. Backed at platform level by `soft_timeout_config`, which speaks after 2.5s of silence even if the model stays quiet.
 
----
-
-## 4. Sub-Agent: Accounting — "Pixl Lighting — Accounting"
-
-**Role:** Invoicing and receivables specialist. Handles all payment status, invoice balances, and statements.
-
-**ElevenLabs ID:** `agent_0101m2fwfttne85stk1hwcjwkzjb`  
-**Branch:** Main
-
-### Responsibilities
-- Invoice lookups (`list_invoices`, `get_invoice`)
-- Payment history and allocations
-- Send formal statements and payment links in writing
-- Guardrail: Never collect credit card details over the phone
-
-### First Message
-> "Pixl Lighting, how can I help you today?"
+### Banned phrases
+Anything exposing internal mechanics: "let me try a simpler/broader/different search", "no results with those search terms", "the system isn't finding it", "I don't have access to", "I'm unable to". An empty result is reported the way a person would report it, and never ends the call.
 
 ---
 
-## Technical Escalation
-All agents escalate technical engineering questions (wiring diagrams, driver loads, DMX/DALI, IP ratings) to **Sophia Charles**. Routine questions are never escalated.
+## Node summary
+
+| Node | Responsibility | Hard guardrail |
+|---|---|---|
+| **Reception** | Caller ID, intent, routing | Doesn't read order details or dates |
+| **Sales** | Catalogue, pricing, quotes, onboarding | Never improvises a spec, price, or lead time; off-catalogue goes to email |
+| **Logistics** | Order status, dispatch, OEM tracking | `esd_date` never spoken; blank `oem_*` ⇒ "being processed" |
+| **Accounting** | Invoices, balances, payments, statements | Never collects card details by phone |
+| **Escalation** | Technical detail | Never guesses; hands to Sophia Charles |
+
+---
+
+## Dormant agents
+
+Still published, receiving no traffic since `transfer_to_agent` was removed. Their prompt files in this repo describe behaviour that is **no longer live**.
+
+| Name | ID |
+|---|---|
+| `Pixl Lighting — Sales & Projects` | `agent_7601m27jcm7ten787a5hpz68sz5j` |
+| `Pixl Lighting — Logistics Agent` | `agent_1001m27jcfqnf3mb6jzszw3w3xf0` |
+| `Pixl Lighting — Accounting` | `agent_0101m2fwfttne85stk1hwcjwkzjb` |
+
+Note the Accounting agent was configured with a different voice (`cjVigY5qzO86Huf0OWal`) to the other three — worth knowing if it is ever brought back into service.

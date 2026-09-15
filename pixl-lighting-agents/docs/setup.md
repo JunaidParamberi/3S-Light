@@ -2,84 +2,111 @@
 
 ## Prerequisites
 
-1. **ElevenLabs Account** — With Conversational AI and Agent Transfer access
-2. **myERP Tenant** — Demo (`myerp.infinitebarakah.com`) or production
+1. **ElevenLabs Account** — with Conversational AI access
+2. **myERP Tenant** — demo (`myerp.infinitebarakah.com`) or production
 3. **MCP Server** — myERP MCP server running at `https://myerp.infinitebarakah.com/api/mcp`
-4. **Phone Number** — Registered on ElevenLabs and assigned to Orchestrator (blocked)
+4. **Phone Number** — registered on ElevenLabs and assigned to the agent (**still blocked** — zero numbers registered)
 
 ---
 
-## Step 1: ElevenLabs Agent Architecture Setup
+## Step 1: The Agent
 
-The system consists of 1 Orchestrator and 3 Department Sub-Agents:
+One agent serves all inbound traffic.
 
-| Role | ElevenLabs Dashboard Name | ElevenLabs Agent ID | First Message |
-|---|---|---|---|
-| **Orchestrator** | `Pixl Lighting — Main Assistant` | `agent_9901m25rmysyefva90xs89chy3nd` | *"Pixl Lighting, how can I direct your call today?"* |
-| **Sales** | `Pixl Lighting — Sales & Projects` | `agent_7601m27jcm7ten787a5hpz68sz5j` | *"Pixl Lighting, how can I help you today?"* |
-| **Logistics** | `Pixl Lighting — Logistics Agent` | `agent_1001m27jcfqnf3mb6jzszw3w3xf0` | *"Pixl Lighting, how can I help you today?"* |
-| **Accounting** | `Pixl Lighting — Accounting` | `agent_0101m2fwfttne85stk1hwcjwkzjb` | *"Pixl Lighting, how can I help you today?"* |
+| | |
+|---|---|
+| **Dashboard name** | `Pixl Lighting — Main Assistant` |
+| **Agent ID** | `agent_9901m25rmysyefva90xs89chy3nd` |
+| **Branch ID** | `agtbrch_3201m25rn01rf789hhvs9sbnpzx9` (this is also `main_branch_id`) |
+| **First message** | *"Pixl Lighting, this is Sarah — how can I help you today?"* |
 
-### Voice Configuration
-- **Model:** Amber King (Raspy, Authentic and Kind)
-- **TTS:** V3 Conversational
-- **Expressive Mode:** Enabled
+### Model configuration
 
-### System Prompts
-- Orchestrator: `docs/orchestrator-prompt.md`
-- Sales: `docs/sales-prompt.md`
-- Logistics: `docs/logistics-prompt.md`
-- Accounting: `docs/accounting-prompt.md`
+| Setting | Value | Note |
+|---|---|---|
+| LLM | `qwen36-35b-a3b` | $0.0025/min |
+| Temperature | `0.8` | **Do not set to 0.** Deterministic sampling makes the agent repeat phrasing verbatim. |
+| `reasoning_effort` | `low` | Trims thinking time on voice turns. Supported by qwen; must be cleared if ever switching to a Gemini model, which rejects it. |
+| TTS | `eleven_v3_conversational` | Expressive Mode on — needed for audio tags |
+| Voice | `F89WkXaQbUlVyNvtlD3X` | |
+| Max duration | `300` seconds | |
 
-### Enable Guardrails
-1. Go to Guardrails tab on each agent.
-2. Enable **Focus** guardrail.
-3. Enable **Manipulation** guardrail.
-4. Enable **Loop Prevention** toggle.
+### System prompt
 
----
+`docs/orchestrator-prompt.md` holds the live base prompt. Every workflow node inherits it and appends its own `additional_prompt`.
 
-## Step 2: MCP Server Configuration
+Node prompts live **only in the agent config**, not in this repo. `sales-prompt.md`, `logistics-prompt.md` and `accounting-prompt.md` belong to the three dormant agents and are historical.
 
-All agents connect to the workspace-level `myERP MCP` server:
+### Guardrails
 
-1. Go to agent's **Tools → MCP** tab.
-2. Ensure `myERP MCP` (`https://myerp.infinitebarakah.com/api/mcp`) is connected.
-3. Verify 16 tools are available (`get_caller_context`, `list_products`, `list_sales_orders`, `list_invoices`, etc.).
-4. Verify authentication token `mo_KkDGxbeU9rkkifrbrrbYqDBca5TvDmKpDvXtHrSnhok`.
+Enable on the Guardrails tab: **Focus** and **Prompt injection**.
 
 ---
 
-## Step 3: Configure Orchestrator `transfer_to_agent`
+## Step 2: MCP Server
 
-On the Orchestrator (`agent_9901m25rmysyefva90xs89chy3nd`):
-
-1. Go to **Tools** tab.
-2. Enable **Transfer to agent** system tool.
-3. Switch to JSON Mode and configure the transfers:
-   - Target 1: `agent_7601m27jcm7ten787a5hpz68sz5j` (Sales)
-   - Target 2: `agent_1001m27jcfqnf3mb6jzszw3w3xf0` (Logistics)
-   - Target 3: `agent_0101m2fwfttne85stk1hwcjwkzjb` (Accounting)
-4. Save and Publish to Main.
+1. Go to **Tools → MCP** on the agent.
+2. Ensure `myERP MCP` (`https://myerp.infinitebarakah.com/api/mcp`) is connected — workspace server ID `iRZUVO4FTNPItBWbbmoR`.
+3. Verify 16 tools are available (`get_caller_context`, `list_products`, `list_sales_orders`, `list_invoices`, …).
 
 ---
 
-## Step 4: Post-Call Webhook & Memory
+## Step 3: Workflow Graph
 
-Ensure the workspace webhook is active:
+Routing is the workflow graph, not `transfer_to_agent`. **Do not re-enable `transfer_to_agent`** — it starts a second billed conversation per transfer and splits the prompt source of truth.
 
-1. Go to ElevenLabs **Settings → Webhooks** (or Developer Webhooks).
+Nodes: `start_node` → `reception` → `sales` / `logistics` / `accounting` / `escalation` → `end_node`.
+
+⚠️ **The workflow object is replaced wholesale, not merged.** A partial update containing only the node you want to change is rejected with *"Workflow must contain a start node."* Always send the complete graph — every node and every edge — when editing any part of it.
+
+---
+
+## Step 4: Never-Go-Quiet Fillers
+
+Under **Turn** settings, `soft_timeout_config`:
+
+```json
+{
+  "timeout_seconds": 2.5,
+  "message": "One sec...",
+  "additional_soft_timeout_messages": ["Just pulling that up now..."],
+  "randomize_fillers": true,
+  "max_soft_timeouts_per_generation": 2,
+  "disable_until_first_user_message": true
+}
+```
+
+⚠️ The API **overrides `max_soft_timeouts_per_generation` to the number of filler messages supplied.** Requesting 2 while supplying 6 messages yields 6. To cap at 2, supply exactly 2 messages (`message` + one entry in `additional_soft_timeout_messages`). Each filler is a billed v3 TTS generation.
+
+---
+
+## Step 5: Post-Call Webhook & Memory
+
+1. **Settings → Webhooks**
 2. Endpoint: `https://myerp.infinitebarakah.com/api/webhooks/elevenlabs`
-3. Events subscribed:
-   - `Transcript` ✅
-   - `Audio` ✅
-   - `Call Initiation Failures` ✅
-4. Purpose: Ingests the call transcript, caller ID, and follow-up data collection fields into myERP so the customer's history is immediately retrieved on subsequent calls.
+3. Event: `Transcript`
+4. Data collection fields: `follow_up_task`, `follow_up_due`
+
+Purpose: ingests transcript, caller ID and follow-up fields into myERP so the customer's history is available on the next call.
 
 ---
 
-## Step 5: Publishing
+## Step 6: Publishing
 
-1. Ensure all changes on each agent's branch are tested.
-2. Click **Publish** → Confirm.
-3. Verify all agents show **Main** branch active.
+Saving an agent update creates a **new version but does not make it live.** A separate deployment call is required.
+
+```
+POST /v1/convai/agents/{agent_id}/deployments
+{
+  "deployment_request": {
+    "requests": [{
+      "branch_id": "agtbrch_3201m25rn01rf789hhvs9sbnpzx9",
+      "deployment_strategy": { "type": "percentage", "traffic_percentage": 100 }
+    }]
+  }
+}
+```
+
+Confirm the response returns `{"traffic_percentage_branch_id_map": {"agtbrch_...": 100}}`.
+
+A percentage below 100 can be used to canary a risky persona change across live traffic.

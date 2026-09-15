@@ -190,19 +190,19 @@ The agent should never ask a caller to "repeat your number in a different format
 
 ## Data Access Patterns
 
-### What Each Agent Can See
+### What Each Workflow Node Uses
 
-| Entity | Agent 1 (Maya) | Agent 2 (Claire) | Agent 3 (Rachel) | Agent 4 (Jordan) |
-|--------|---------------|-----------------|-----------------|-----------------|
-| Customer | Read | Read | Read+Write | Read |
-| Quote | Read | Read | Read+Write | — |
-| Sales Order | Read | Read | Read | Read |
-| Invoice | Read | Read | Read | Read |
-| Product | Read | Read | Read | Read |
-| Task | Read | Read | Read+Write | Read |
-| Interaction | Read | Read | Read+Write | Read |
-| Deal | — | — | Read+Write | Read |
-| Work Order | — | — | — | Read |
-| Purchase Order | — | — | — | Read |
-| Pipeline | — | — | — | Read |
+Access is no longer split per agent — one agent holds the workspace MCP connection, and every node reads through it. The table below is which entities each node actually touches.
+
+| Entity | Reception | Sales | Logistics | Accounting |
+|--------|-----------|-------|-----------|------------|
+| Customer | Read | Read | Read | Read |
+| Quote | — | Read | — | — |
+| Sales Order | — | — | Read | — |
+| Invoice | — | — | — | Read |
+| Product | — | Read | — | — |
+| Task | via webhook only | via webhook only | via webhook only | via webhook only |
+| Interaction | via webhook only | via webhook only | via webhook only | via webhook only |
+
+**There is no write access at all.** The MCP server exposes 16 tools and every one is read-only — no `create_customer`, `create_quote`, `create_interaction` or `create_task` exists (see [erp-fixes.md](erp-fixes.md#e-10)). Task and Interaction rows can only be written by the post-call webhook, which is not currently landing (E-9). Quote creation, order conversion and invoice issuing remain human-only by design.
 | Materials | — | — | — | Read |

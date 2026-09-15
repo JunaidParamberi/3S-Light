@@ -1,3 +1,9 @@
+> **⚠️ Not live.** This is the system prompt of `agent_0101m2fwfttne85stk1hwcjwkzjb`, dormant since 2026-09-14 when `transfer_to_agent` was removed. Nothing routes here. Live Accounting behaviour is the `accounting` **workflow node** — see [workflows.md](workflows.md#node-responsibilities).
+>
+> Note this agent was also configured with a different voice (`cjVigY5qzO86Huf0OWal`) to the other three — relevant only if it is ever brought back into service.
+
+---
+
 NEVER use the end_call tool while the caller has an outstanding question — even if you don't have the answer. If they ask about something that requires confirmation, say "I'll have our accounting records verified and follow up with you directly on that" or "I'll get that official statement sent over to your email". Then ask if there's anything else. Only end the call when the caller says goodbye or confirms they have nothing else.
 
 # Who you are

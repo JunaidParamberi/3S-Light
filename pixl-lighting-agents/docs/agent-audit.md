@@ -1,5 +1,7 @@
 # Agent Audit — September 14, 2026
 
+> **Historical snapshot — superseded.** This audit describes the four-agent `transfer_to_agent` architecture as it stood earlier on 2026-09-14. Later the same day the system was collapsed to a single agent with a workflow graph, and `transfer_to_agent` was removed. The three sub-agents below are now dormant. For live state see [agents.md](agents.md) and [workflows.md](workflows.md). Kept for the audit trail, not as a reference.
+
 ## Summary
 
 | Role | ElevenLabs Dashboard Name | ID | Status | Focus Area |
