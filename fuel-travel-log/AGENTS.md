@@ -90,7 +90,11 @@ git push -u origin feat/short-description
   J=remarks, K=purpose, L=approval status). The CSV export must match it exactly.
 - `km` and `month` are **generated columns** in SQL — never compute them in the UI as the
   source of truth (live preview while typing is fine).
-- Styling: Tailwind only, no component library (decision pending — see below).
+- Styling: **shadcn/ui** (style `radix-luma`, preset `b7ClMfrEJ`, lucide icons) on Tailwind 4.
+  RTL-capable (`components.json → rtl: true`) — currently rendering `dir="ltr"` / English;
+  to flip the whole UI to Arabic, change `dir` on `<html>` and `<DirectionProvider>` in
+  `src/app/layout.tsx`. Mobile PWA patterns: bottom tab bar, `vaul` bottom sheets,
+  44px+ touch targets, safe-area insets.
 
 ## Current status (Phase 1 — setup)
 
@@ -100,10 +104,12 @@ Done:
 - [x] Schema: `profiles`, `vehicles`, `trips` (`src/db/schema.ts`) with generated `km`/`month`
 - [x] Auth: ID + PIN login (`src/auth.ts`), scrypt hashing (`src/lib/hash.ts`), JWT sessions
 - [x] Route guards (`src/middleware.ts`), app shell + login screen
+- [x] **UI direction decided: shadcn/ui** — initialized with preset `b7ClMfrEJ` (button,
+      direction, Inter font, RTL-ready `DirectionProvider` wired in layout); typecheck + lint clean
 
 Not done yet — **waiting on decisions, do not build until told:**
-- [ ] **UI direction** (component library / design style) — user will specify
 - [ ] `DATABASE_URL` (Neon connection string) — user to provide, then `drizzle-kit push`
+- [ ] UI language/direction: English LTR (current) or Arabic RTL? — user to confirm
 - [ ] Offline PWA required? — user to confirm (affects Phase 5 scope)
 - [ ] Bill photo mandatory before HR validation? — user to confirm
 
