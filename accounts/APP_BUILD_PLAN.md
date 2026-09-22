@@ -34,8 +34,8 @@ Today, fuel trips are logged into a manual Excel file (`FUEL CLAIM LOG.xlsx`):
 - Every bill photo stored safely; approved entries are locked and cannot be edited.
 - A **"Validated by HR"** status field covers the third signature box.
 
-**Per-employee accounts:**
-- Every employee has their own login (company email/phone one-time code, or employee ID + PIN).
+**Per-employee accounts (managed by a super admin):**
+- A **super admin** creates every employee's account in the app — username + password. There is **no public sign-up**; employees just log in with what they were given. Forgotten passwords are reset by the super admin.
 - Employees see only their own trips; accounting always knows who claimed what; name/ID/department/vehicle auto-fill from the account at first login.
 
 **Offline support:**
@@ -50,7 +50,7 @@ Today, fuel trips are logged into a manual Excel file (`FUEL CLAIM LOG.xlsx`):
 | Frontend | **Next.js 15 (App Router)** + TypeScript + Tailwind CSS | One codebase, modern, great docs, deploys to Vercel free tier |
 | Database | **Neon** (serverless Postgres; free tier, branch + autoscaling) | Real Postgres, works with any ORM, pauses to €0 when idle; project already decided on Neon |
 | ORM / DB access | **Drizzle ORM** (or Prisma if you prefer) | Typed queries, easy migrations against Neon |
-| Auth | **NextAuth (Auth.js)** — magic link / email OTP, or employee ID + PIN (decision during build); Auth.js has built-in providers | No passwords to forget for drivers; works with any Postgres, no dependency on a proprietary auth service |
+| Auth | **NextAuth (Auth.js)** — credentials login (username + password); accounts are **created by a super admin**, never self-registered | Matches the super-admin-provisioned model; works with any Postgres, no proprietary auth dependency |
 | Photo storage (petrol bills) | **Vercel Blob** (free tier) | Lives on the same host as the app; no separate account; free tier is plenty for ~300KB compressed photos |
 | PWA | `next-pwa` (Workbox) | Installable on home screen, offline entry queue |
 | Hosting | **Vercel** (free tier) | Deploy from git, zero server management |
@@ -69,12 +69,15 @@ Today, fuel trips are logged into a manual Excel file (`FUEL CLAIM LOG.xlsx`):
 
 ```sql
 -- Who is logged in, what they're allowed to do, and their details from the Excel header block
-create type user_role as enum ('employee','manager','accounts','hr');
+create type user_role as enum ('super_admin','manager','accounts','hr','employee');
 
 create table profiles (
   id                 uuid primary key,     -- = the Auth.js user id from NextAuth
   role               user_role not null default 'employee',
   name               text not null,
+  username           text unique not null, -- login name = Employee ID (recommended; decision pending)
+  password_hash      text not null,        -- scrypt hash — set/reset only by super admin
+  active             boolean not null default true,  -- super admin can deactivate leavers
   employee_id        text,                 -- matches Excel "EMPLOYEE ID"
   designation        text,                 -- matches Excel "DESIGNATION"
   department         text,                 -- matches Excel "DEPARTMENT"
@@ -143,6 +146,7 @@ create table trips (
 
 | Role | Can do |
 |---|---|
+| **Super admin** | Everything — plus create employee accounts, reset/deactivate them (`/admin/users`). Owns the user list. |
 | **Employee** | Insert and view only their own trips (`user_id = auth.uid()`); view their own profile; upload their own bill photos. Cannot edit a trip once `status` is no longer `submitted`. |
 | **Manager** | View all trips in their department(s); approve / reject (`status` → approved/rejected, set `approved_by`, `approved_at`). Cannot edit the amounts. |
 | **Accounts** | Read everything (read-only) — dashboard, exports. |
@@ -162,6 +166,7 @@ create table trips (
 |---|---|---|
 | `/` | all | Big **"Add Trip"** button + list of this month's trips |
 | `/new` | employee | The 8-field entry form + camera photo; offline-capable |
+| `/admin/users` | super admin | Create employee accounts (name, username, dept, role, initial password), reset password, deactivate/reactivate |
 | `/approve` | manager | This week's trips, grouped by employee, **Approve All** button, reject-with-comment |
 | `/dashboard` | accounts (read-only) | Totals by employee / department / month, fuel vs Salik vs parking split, month filter, **Export CSV** |
 | `/vehicles` | manager / accounts | Vehicle file: add/edit vehicles (registration, make/model, current holder); per-vehicle fuel history + total claims |
@@ -182,7 +187,11 @@ create table trips (
 - [ ] Init Next.js (App Router) + Tailwind, add Drizzle + Auth.js packages, `.env.local` with Neon + Auth keys.
 - [ ] Neon project: create tables + RLS policies (section 4), Vercel Blob store configured (bucket `trip-bills`).
 - [ ] Auth screen: magic link / OTP. First login → **profile completion form** (name, employee ID, designation, department, division, vehicle) — filled once, used forever.
-- [ ] Roles assigned (employee / manager / accounts / hr) on the profile.
+- [ ] Roles assigned (employee / manager / accounts / hr / super_admin) on the profile.
+- [ ] **Account provisioning:** `/admin/users` — super admin creates employee accounts
+      (name, username, department, role, initial password), resets passwords, deactivates users.
+      No self-registration anywhere.
+- [ ] Seed command creating the first super admin (`npm run seed:admin`) — run once on launch.
 - [ ] Route guards in `middleware.ts`.
 
 **Definition of done:** a person can log in, fill their profile, and land on `/`. A manager can log in and see the same app with an Approve tab.
@@ -237,6 +246,7 @@ create table trips (
 ## 7. Deliverables Checklist (what "done" means)
 
 - [ ] Employee adds a trip in under 1 minute, phone-first, with bill photo.
+- [ ] Super admin can create an employee account and that employee can log in immediately; forgotten passwords are reset by the super admin, not by email links.
 - [ ] New trips from an offline location sync automatically when back online.
 - [ ] Manager approves a full week with one click — no per-trip signatures.
 - [ ] Accounts dashboard is live with per-employee, per-department, per-month totals.
@@ -277,6 +287,6 @@ Total: **~10 working days**, then zero maintenance beyond occasional dependency 
 
 ## 10. Open Decisions (need your call)
 
-1. **Login method for employees:** company email + one-time code (more secure) **vs** employee ID + PIN (fastest for drivers, works with poor signal). *Recommendation: ID + PIN.*
+1. **Login details (recommended answers, confirm to lock):** super admin creates accounts; **username = Employee ID**; **password = 4–6 digit PIN** (driver-friendly at the pump, stored scrypt-hashed). Alternative: custom usernames / full alphanumeric passwords.
 2. **Offline truly required, or nice-to-have?** If drivers always have signal, Phase 5 shrinks and the app can ship on Day 5–6.
 3. **Bill photo mandatory or optional?** The current policy says documents must be attached to validate the claim — recommend **mandatory for the "Validated (HR)" stage**, optional at submission.
