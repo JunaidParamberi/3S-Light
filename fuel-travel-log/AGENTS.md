@@ -30,7 +30,7 @@ A phone-first web app that replaces the manual `accounts/FUEL CLAIM LOG.xlsx` pr
 |---|---|
 | Framework | Next.js 16 (App Router) + TypeScript (strict) + Tailwind CSS 4 |
 | Database | Neon (serverless Postgres) via Drizzle ORM (`src/db/`) |
-| Auth | Auth.js / NextAuth v5 — **Employee ID + PIN** (scrypt-hashed), JWT sessions |
+| Auth | Auth.js / NextAuth v5 — **username + password** (scrypt-hashed), provisioned by a super admin, JWT sessions |
 | Photos | Vercel Blob (bucket `trip-bills`), client-compressed to ~300KB |
 | PWA | next-pwa / Workbox (offline entry queue) |
 | Hosting | Vercel (free tier) |
@@ -43,6 +43,7 @@ npm run dev        # dev server (writes/refreshes the Next.js agent-rules block 
 npm run build      # production build
 npm run lint       # eslint
 npx drizzle-kit push   # apply src/db/schema.ts to Neon (needs DATABASE_URL in .env.local)
+npm run seed:admin     # create the first super admin (idempotent)
 npx tsc --noEmit   # type check
 ```
 
@@ -83,7 +84,7 @@ git push -u origin feat/short-description
 - **Server Components by default**; add `'use client'` only when the component needs state/events.
 - All DB access goes through `src/db/index.ts` (Drizzle). Queries must be **scoped by the
   signed-in user or role** — never trust a client-supplied `userId`.
-- Roles: `employee | manager | accounts | hr`. Route guards live in `src/middleware.ts`
+- Roles: `super_admin | manager | accounts | hr | employee`. Route guards live in `src/middleware.ts`
   AND are re-checked in server actions (defense in depth).
 - Excel column mapping: keep field names/comments aligned with the original sheet
   (A=travel_date, B=start_meter, C=end_meter, D=from, E=to, F=km, G=fuel, H=salik, I=parking,
@@ -111,13 +112,16 @@ Done:
 - [x] **UI direction decided: shadcn/ui** — initialized with preset `b7ClMfrEJ` (button,
       direction, Inter font, RTL-ready `DirectionProvider` wired in layout); typecheck + lint clean
 - [x] First super admin seeded (`npm run seed:admin` — idempotent; credentials shown once at creation)
+- [x] `/admin/users` screen: create account (name/username/password/role/vehicle), reset password,
+      activate/deactivate — super-admin only (middleware guard + re-check in every action);
+      e2e smoke-tested: anon → 302 login, admin login → page 200
 
-Not done yet — **waiting on decisions, do not build until told:**
-- [x] UI language/direction: **English LTR — decided.** (RTL capability kept dormant: components are
+Decisions (all closed — do not re-ask):
+- [x] UI language/direction: **English LTR.** (RTL capability kept dormant: components are
       RTL-ready, flip `dir` in `src/app/layout.tsx` if Arabic is ever wanted.)
-- [ ] Offline PWA required? — user to confirm (affects Phase 5 scope)
-- [ ] Bill photo mandatory before HR validation? — user to confirm
-- [ ] `/admin/users` screen (create/reset employee accounts) — build when user gives go-ahead
+- [x] Offline PWA: **required** — Phase 5 offline queue is full scope.
+- [x] Bill photo: **optional** — never blocks submission or HR validation.
+- [x] `/admin/users` screen: **built and smoke-tested** (see Done above).
 
 Remaining phases (see `../accounts/APP_BUILD_PLAN.md`): entry form → approval →
 dashboard/export → offline PWA → migration/test/launch.
