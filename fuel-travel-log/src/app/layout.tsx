@@ -20,6 +20,7 @@ const NAV: { href: string; label: string; roles: UserRole[] }[] = [
   { href: '/approve', label: 'Approve', roles: ['manager'] },
   { href: '/vehicles', label: 'Vehicles', roles: ['manager', 'accounts'] },
   { href: '/dashboard', label: 'Dashboard', roles: ['accounts', 'hr'] },
+  { href: '/admin/users', label: 'Admin', roles: ['super_admin'] },
 ];
 
 export default async function RootLayout({

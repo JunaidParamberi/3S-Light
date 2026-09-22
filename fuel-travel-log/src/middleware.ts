@@ -11,6 +11,7 @@ const ROUTES: { prefix: string; roles: UserRole[] }[] = [
   { prefix: '/dashboard', roles: ['accounts', 'hr'] },
   { prefix: '/vehicles', roles: ['manager', 'accounts'] },
   { prefix: '/new', roles: ['employee', 'manager'] },
+  { prefix: '/admin', roles: ['super_admin'] },
 ];
 
 export default auth((req) => {
