@@ -113,7 +113,8 @@ Done:
 - [x] First super admin seeded (`npm run seed:admin` — idempotent; credentials shown once at creation)
 
 Not done yet — **waiting on decisions, do not build until told:**
-- [ ] UI language/direction: English LTR (current) or Arabic RTL? — user to confirm
+- [x] UI language/direction: **English LTR — decided.** (RTL capability kept dormant: components are
+      RTL-ready, flip `dir` in `src/app/layout.tsx` if Arabic is ever wanted.)
 - [ ] Offline PWA required? — user to confirm (affects Phase 5 scope)
 - [ ] Bill photo mandatory before HR validation? — user to confirm
 - [ ] `/admin/users` screen (create/reset employee accounts) — build when user gives go-ahead
