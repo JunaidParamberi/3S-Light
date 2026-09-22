@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 function LoginForm() {
-  const [employeeId, setEmployeeId] = useState('');
-  const [pin, setPin] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -18,13 +18,13 @@ function LoginForm() {
     setLoading(true);
     setError('');
     const res = await signIn('credentials', {
-      employeeId,
-      pin,
+      username,
+      password,
       redirect: false,
     });
     setLoading(false);
     if (res?.error) {
-      setError('Incorrect Employee ID or PIN');
+      setError('Incorrect username or password');
       return;
     }
     router.push(params.get('callbackUrl') || '/');
@@ -38,13 +38,13 @@ function LoginForm() {
     >
       <h1 className="mb-1 text-xl font-bold">Welcome back</h1>
       <p className="mb-5 text-sm text-gray-500">
-        Sign in with your Employee ID and PIN.
+        Sign in with the username and password your admin gave you.
       </p>
 
-      <label className="mb-1 block text-sm font-medium">Employee ID</label>
+      <label className="mb-1 block text-sm font-medium">Username</label>
       <input
-        value={employeeId}
-        onChange={(e) => setEmployeeId(e.target.value)}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         placeholder="e.g. EMP-042"
         autoComplete="username"
         autoCapitalize="characters"
@@ -52,16 +52,15 @@ function LoginForm() {
         className="mb-4 w-full rounded-lg border px-3 py-3 text-base outline-none focus:border-blue-500"
       />
 
-      <label className="mb-1 block text-sm font-medium">PIN</label>
+      <label className="mb-1 block text-sm font-medium">Password</label>
       <input
-        value={pin}
-        onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         type="password"
-        inputMode="numeric"
         autoComplete="current-password"
-        placeholder="••••"
+        placeholder="••••••"
         required
-        className="w-full rounded-lg border px-3 py-3 text-base tracking-widest outline-none focus:border-blue-500"
+        className="w-full rounded-lg border px-3 py-3 text-base outline-none focus:border-blue-500"
       />
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}

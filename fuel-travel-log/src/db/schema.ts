@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 // ── Enums ────────────────────────────────────────────────────────────
-export const userRole = pgEnum('user_role', ['employee', 'manager', 'accounts', 'hr']);
+export const userRole = pgEnum('user_role', ['super_admin', 'manager', 'accounts', 'hr', 'employee']);
 export const tripStatus = pgEnum('trip_status', ['submitted', 'approved', 'rejected', 'validated']);
 
 // ── profiles: who is logged in + their details (Excel header block) ──
@@ -24,7 +24,9 @@ export const profiles = pgTable('profiles', {
   department: text('department'), // Excel "DEPARTMENT"
   division: text('division'), // Excel "DIVISION"
   vehicleRegistration: text('vehicle_registration'), // usual vehicle — pre-fill suggestion only
-  pinHash: text('pin_hash'), // scrypt hash of employee's login PIN (never stored raw)
+  username: text('username').notNull().unique(), // login name (recommended: = Employee ID)
+  passwordHash: text('password_hash').notNull(), // scrypt hash — set/reset only by super admin
+  active: boolean('active').notNull().default(true), // super admin can deactivate leavers
   managerId: uuid('manager_id'), // who approves this person's trips
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
@@ -63,7 +65,11 @@ export const trips = pgTable('trips', {
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   validatedBy: uuid('validated_by'), // HR validation
   validatedAt: timestamp('validated_at', { withTimezone: true }),
-  month: text('month').generatedAlwaysAs(sql`to_char(travel_date, 'YYYY-MM')`),
+  // generated in DB (extract-based: to_char(date) resolves to a STABLE timestamp cast, which
+  // Postgres forbids in generated columns — this form is immutable)
+  month: text('month').generatedAlwaysAs(
+    sql`extract(year from travel_date)::int::text || '-' || lpad(extract(month from travel_date)::int::text, 2, '0')`,
+  ),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
