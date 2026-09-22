@@ -21,7 +21,7 @@ Today, fuel trips are logged into a manual Excel file (`FUEL CLAIM LOG.xlsx`):
 
 **Employees (30 seconds at the pump):**
 - Open the app → press **"Add Trip"** → type date, start meter, closing meter, from ▶ to, fuel amount, Salik, parking.
-- Optional: snap a photo of the petrol bill (required by the existing policy — reminder text is shown until uploaded).
+- Optional: snap a photo of the petrol bill — nice to have as supporting evidence, but **never blocks a claim** (decided: photo is optional).
 - Every trip is tied to a **vehicle file** — registration number, make/model, who currently holds it — so vehicle swaps and spare cars are always tracked correctly.
 - The app **calculates kilometres automatically** (closing − starting) and **remembers the last meter reading**, so there's almost nothing to type.
 
@@ -248,7 +248,7 @@ create table trips (
 
 ## 7. Deliverables Checklist (what "done" means)
 
-- [ ] Employee adds a trip in under 1 minute, phone-first, with bill photo.
+- [ ] Employee adds a trip in under 1 minute, phone-first (bill photo optional).
 - [ ] Super admin can create an employee account and that employee can log in immediately; forgotten passwords are reset by the super admin, not by email links.
 - [ ] New trips from an offline location sync automatically when back online.
 - [ ] Manager approves a full week with one click — no per-trip signatures.
@@ -291,5 +291,5 @@ Total: **~10 working days**, then zero maintenance beyond occasional dependency 
 ## 10. Open Decisions (need your call)
 
 1. **Login details (recommended answers, confirm to lock):** super admin creates accounts; **username = Employee ID**; **password = 4–6 digit PIN** (driver-friendly at the pump, stored scrypt-hashed). Alternative: custom usernames / full alphanumeric passwords.
-2. **Offline truly required, or nice-to-have?** If drivers always have signal, Phase 5 shrinks and the app can ship on Day 5–6.
-3. **Bill photo mandatory or optional?** The current policy says documents must be attached to validate the claim — recommend **mandatory for the "Validated (HR)" stage**, optional at submission.
+2. ~~Offline truly required?~~ **Decided: yes** — drivers work in places without signal (basements, sites). Phase 5 offline queue is full scope, not optional.
+3. ~~Bill photo mandatory or optional?~~ **Decided: optional** — photos are encouraged as supporting evidence but never block submission or HR validation.
