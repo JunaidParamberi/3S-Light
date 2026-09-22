@@ -102,16 +102,21 @@ Done:
 - [x] Project scaffold (Next.js 16, TS, Tailwind)
 - [x] Packages: drizzle-orm, @neondatabase/serverless, next-auth v5, drizzle-kit
 - [x] Schema: `profiles`, `vehicles`, `trips` (`src/db/schema.ts`) with generated `km`/`month`
-- [x] Auth: ID + PIN login (`src/auth.ts`), scrypt hashing (`src/lib/hash.ts`), JWT sessions
+      — `month` uses an extract-based expression (to_char(date) is STABLE, banned in generated columns)
+- [x] **Neon linked**: project `broad-cake-26785732` / branch `production` (`.neon`, `neon.ts`),
+      `DATABASE_URL` etc. pulled into `.env.local` — schema pushed, tables verified live
+- [x] Auth: **super-admin-provisioned username + password** (`src/auth.ts`, scrypt in `src/lib/hash.ts`),
+      JWT sessions, `active` flag blocks deactivated users; login screen matches
 - [x] Route guards (`src/middleware.ts`), app shell + login screen
 - [x] **UI direction decided: shadcn/ui** — initialized with preset `b7ClMfrEJ` (button,
       direction, Inter font, RTL-ready `DirectionProvider` wired in layout); typecheck + lint clean
+- [x] First super admin seeded (`npm run seed:admin` — idempotent; credentials shown once at creation)
 
 Not done yet — **waiting on decisions, do not build until told:**
-- [ ] `DATABASE_URL` (Neon connection string) — user to provide, then `drizzle-kit push`
 - [ ] UI language/direction: English LTR (current) or Arabic RTL? — user to confirm
 - [ ] Offline PWA required? — user to confirm (affects Phase 5 scope)
 - [ ] Bill photo mandatory before HR validation? — user to confirm
+- [ ] `/admin/users` screen (create/reset employee accounts) — build when user gives go-ahead
 
 Remaining phases (see `../accounts/APP_BUILD_PLAN.md`): entry form → approval →
 dashboard/export → offline PWA → migration/test/launch.

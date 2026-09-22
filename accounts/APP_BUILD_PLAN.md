@@ -123,7 +123,10 @@ create table trips (
   approved_at      timestamptz,
   validated_by     uuid references profiles(id),
   validated_at     timestamptz,
-  month            text generated always as (to_char(travel_date, 'YYYY-MM')) stored,  -- for monthly reports
+  -- generated (extract-based — to_char(date) resolves to a STABLE cast, banned in generated columns)
+  month text generated always as (
+    extract(year from travel_date)::int::text || '-' || lpad(extract(month from travel_date)::int::text, 2, '0')
+  ) stored,
   created_at       timestamptz default now(),
   constraint chk_km_positive check (end_meter > start_meter),
   constraint chk_amounts_positive check (fuel_amount >= 0 and salik_amount >= 0 and parking_amount >= 0)
