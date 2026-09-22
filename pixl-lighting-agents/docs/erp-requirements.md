@@ -47,10 +47,11 @@ Callers often give only a company name ("I'm from Bluewater"). No tool exists fo
 
 Returns *"Customer not found"* for an ID that `find_customer_by_phone` just returned in the same call. E.g. phone lookup returned `31f5c24e-…`, then `get_customer_360(31f5c24e-…)` failed. Either different tables/tenants or wrong identifier expected. Also costs 6.5s — entirely wasted on failing.
 
-### Current state
+### Current state (updated 15 Sep 2026)
 
-The workspace MCP server (`iRZUVO4FTNPItBWbbmoR`) exposes **16 tools, all read-only**:
+The workspace MCP server exposes **20 tools** — 16 read-only + 4 write:
 
+**Read-only tools (16):**
 ```
 list_interactions        list_tasks             get_customer_360
 find_customer_by_phone   find_customer_by_email get_caller_context
@@ -60,7 +61,21 @@ list_products            get_product            list_invoices
 get_invoice
 ```
 
-**No `create_interaction`, no `create_task`, no `create_customer`, no `find_customer_by_company`.** Write tools exist on the server (create_quote, create_sales_order, etc.) — the interaction/customer endpoints are simply absent. `create_task` exists server-side at write scope but is not exposed.
+**Write tools (4) — added 15 Sep 2026:**
+```
+create_interaction       create_task            create_customer
+find_customer_by_company
+```
+
+> **Note:** Both `create_interaction` and `log_interaction` work as tool names. Use `create_interaction` in prompts.
+
+The new key (`mo_DBXxKqZxgRH02Jt2Vb6-rO8vVZ9joj9wuPZbnj5_LGk`) has:
+- `read_only = false`
+- `create_interaction`, `create_task`, `create_customer`, `find_customer_by_company` in allowlist
+- `wsec_…` webhook secret set
+- Production `elevenlabs_agent_id` = `agent_9901m25rmysyefva90xs89chy3nd`
+
+Old key `mo_KkDGxbeU9` has been revoked.
 
 ---
 
@@ -152,14 +167,34 @@ follow_up_task = "Send verified dispatch information for order VSO-2026-0001 in 
 | 12 | **Production tenant** | Demo tenant can't go live — no real products, orders, invoices |
 | 13 | **Production API keys** (new `mo_…` tokens) for MCP + webhook | Demo keys can't serve production traffic |
 | 14 | **Real customer records** (contacts, phones, emails) | Only 2 test contacts exist (Sarah Mills, Junaid) |
-| 15 | **Billing contact name** | Agent ends call early on "who do I contact about billing?" — no data (PIX-22, currently accepted) |
+| 15 | **Billing contact name** | Agent ends call early on "who do I contact about billing?" — no data (PIX-22, currently accepted). **This is a data entry issue** — the field exists on customer records but isn't populated. |
+
+---
+
+---
+
+## 📝 D. DOC CORRECTIONS (for voice team)
+
+### Issue: "16 read-only tools" claim is outdated
+
+The docs (and any claims that "the server has 16 read-only tools") are now misleading. As of 15 Sep 2026:
+
+- **16 read-only tools** still exist
+- **4 write tools** have been added: `create_interaction`, `create_task`, `create_customer`, `find_customer_by_company`
+- **Total: 20 tools**
+
+### Issue: `create_interaction` vs `log_interaction`
+
+Both names work now. The tool is officially named `create_interaction`, but `log_interaction` is also accepted as an alias. Use `create_interaction` in all prompts and documentation to avoid confusion.
 
 ---
 
 ## 🎯 Priority Summary — the one-line version for the team
 
-> **🔴 P0 / Blockers:** ① `create_interaction` + `create_task` + `create_customer` (call logging + memory) ② `find_customer_by_company` ③ fix `list_products` search ④ real product catalogue ⑤ order line items ⑥ webhook actually writing rows.
+> **✅ RESOLVED (15 Sep 2026):** ① `create_interaction` + `create_task` + `create_customer` (call logging + memory) ② `find_customer_by_company` ③ new key with write access + webhook secret
+>
+> **🔴 P0 / Blockers:** ④ fix `list_products` search ⑤ real product catalogue ⑥ order line items ⑦ webhook actually writing rows (test with new key)
 >
 > **🟠 High:** `get_customer_360` fix · OEM fields vs status · production tenant + keys · real customer records.
 >
-> **🟡 Medium:** lookup latency (sub-2s target) · billing contact name.
+> **🟡 Medium:** lookup latency (sub-2s target) · billing contact name (data entry issue).

@@ -1,0 +1,19 @@
+#!/bin/sh
+# Block direct pushes to main — all changes must go through a feature branch + PR.
+# Enable with:  git config core.hooksPath .githooks   (run once per clone)
+
+while read local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "✗ Direct push to 'main' is blocked by .githooks/pre-push."
+    echo ""
+    echo "  Use a feature branch + PR instead:"
+    echo "    git checkout -b feat/short-description"
+    echo "    git push -u origin feat/short-description"
+    echo "    # then open a PR into main"
+    echo ""
+    echo "  (One-time setup for new clones: git config core.hooksPath .githooks)"
+    exit 1
+  fi
+done
+
+exit 0
